@@ -1,8 +1,7 @@
 {
   "profiles": {
     "ImageCompress": {
-      "commandName": "Project",
-      "commandLineArgs": "--op -e s -e e -a a -s f -e de \"F:\\tmp\\testSub\" F:\\tmp\\test_rst"
+      "commandName": "Project"
     }
   }
 }
