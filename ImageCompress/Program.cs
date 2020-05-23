@@ -26,8 +26,8 @@ namespace ImageCompress
             var qualitySpecified = long.TryParse(args[args.Length - 1], out quality);
             quality = qualitySpecified ? quality : 80;
             int offset = qualitySpecified ? 1 : 0;
-            var destination = args[args.Length - 1 - offset];
-            var source = args[args.Length - 1 - offset - 1];
+            var destination = Path.GetFullPath(args[args.Length - 1 - offset]);
+            var source = Path.GetFullPath(args[args.Length - 1 - offset - 1]);
 
             var isValid = (source.IsFile() || source.IsDirectory()) && (destination.IsDirectory() || destination.IsFile());
             if (!isValid)
