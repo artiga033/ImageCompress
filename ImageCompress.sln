@@ -3,9 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29806.167
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImageCompress", "ImageCompress\ImageCompress.csproj", "{CAF3FF27-B228-4079-BB52-545EA93BD966}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ImageCompress.Cli", "ImageCompress\ImageCompress.Cli.csproj", "{CAF3FF27-B228-4079-BB52-545EA93BD966}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "ImageCompress.Shared", "ImageCompress.Shared\ImageCompress.Shared.shproj", "{B40BCE1D-3194-452E-9B99-26EF65C1D21D}"
 EndProject
 Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		ImageCompress.Shared\ImageCompress.Shared.projitems*{b40bce1d-3194-452e-9b99-26ef65c1d21d}*SharedItemsImports = 13
+		ImageCompress.Shared\ImageCompress.Shared.projitems*{caf3ff27-b228-4079-bb52-545ea93bd966}*SharedItemsImports = 5
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU

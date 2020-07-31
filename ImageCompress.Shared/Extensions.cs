@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 
-namespace ImageCompress
+namespace ImageCompress.Shared
 {
     static class Extensions
     {
