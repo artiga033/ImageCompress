@@ -4,17 +4,19 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
+using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 
 namespace ImageCompress.Shared
 {
-    static class CompressHandler
+    public static class CompressHandler
     {
         private static ImageCodecInfo GetCodecInfo(string format)
         {
-            var _ = ImageCodecInfo.GetImageDecoders();
+            var dcs = ImageCodecInfo.GetImageDecoders();
             ImageCodecInfo codecInfo = null;
-            foreach (var i in _)
+            foreach (var i in dcs)
             {
                 if (i.FormatDescription.Equals(format))
                 {
@@ -36,7 +38,7 @@ namespace ImageCompress.Shared
             }
             return null;
         }
-        private static EncoderParameters GetEncoderParameters(long quality)
+        private static EncoderParameters GetQualityEncoderParameters(long quality)
         {
             EncoderParameter p = new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, quality);
             EncoderParameters parameters = new EncoderParameters();
@@ -48,38 +50,53 @@ namespace ImageCompress.Shared
         /// 通过指定的 CompressOption 实例执行单个文件压缩
         /// </summary>
         /// <param name="option"></param>
+        /// <exception cref="NotSupportedException">Image.FromFile 引发的 OutOfMemoryException</exception>
         /// <exception cref="FileNotFoundException"></exception>
         /// <exception cref="System.ArgumentException"></exception>
-        public static void CompressSingle(string filename, CompressOption option)
+
+        public static void CompressSingle(string filename, string outputPath, ICompressOption option)
         {
-            var img = Image.FromFile(filename);
+            Image img;
+            try
+            {
+                img = Image.FromFile(filename);
+            }
+            /*  OutOfMemoryException
+                The file does not have a valid image format.
+                -or-
+                GDI+ does not support the pixel format of the file.
+            --MSDN : https://docs.microsoft.com/en-us/dotnet/api/system.drawing.image.fromfile?view=dotnet-plat-ext-3.1
+            */
+            catch (OutOfMemoryException e)
+            {
+                throw new NotSupportedException("Not Supported file format or out of memory.(Mostly the former)", e);
+            }
             var output = new Bitmap(img.Size.Width, img.Size.Height);
             Graphics g = Graphics.FromImage(output);
             g.DrawImage(img, new Rectangle(0, 0, img.Size.Width, img.Size.Height), 0, 0, img.Width, img.Height, GraphicsUnit.Pixel);
             g.Dispose();
             img.Dispose();
             var codec = GetCodecInfo(ImageFormat.Jpeg);
-            var eps = GetEncoderParameters(option.Quality);
+            var eps = GetQualityEncoderParameters(option.Quality);
 
 
-            var realPath = option.OutputPath.IsDirectory() ?
-                Path.Combine(option.OutputPath, Path.GetFileNameWithoutExtension(filename)) + ".jpg"
-                : option.OutputPath;//option.OutputPath could be either a directory or a file path.
+            var realPath = outputPath.IsDirectory() ?
+                Path.Combine(outputPath, Path.GetFileNameWithoutExtension(filename)) + ".jpg"
+                : outputPath;//outputPath could be either a directory or a file path.
 
 
 
-            output.Save(option.OutputPath, codec, eps);
+            output.Save(realPath, codec, eps);
             output.Dispose();
         }
 
         /// <summary>
         /// 通过指定的 MassCompressOption 实例执行批量文件压缩
         /// </summary>
-        /// <exception cref="FileNotFoundException"></exception>
-        /// <exception cref="System.ArgumentException"></exception>
-        public static void CompressMultiple(IEnumerable<string> files, MassCompressOption option)
+        /// <exception cref="AggregateException"></exception>
+        public static void CompressMultiple(IEnumerable<string> files, string outputPath, IMassCompressOption option)
         {
-            if (!Directory.Exists(option.OutputPath)) Directory.CreateDirectory(option.OutputPath);
+            if (!Directory.Exists(outputPath)) Directory.CreateDirectory(outputPath);
 
 
             // Use ConcurrentQueue to enable safe enqueueing from multiple threads.
@@ -89,11 +106,12 @@ namespace ImageCompress.Shared
             {
                 try
                 {
-                    CompressSingle(file, option);
+                    CompressSingle(file, outputPath, option);
                 }
                 // Store the exception and continue with the loop.
                 catch (Exception e)
                 {
+                    e.Source = file;
                     exceptions.Enqueue(e);
                 }
             });
@@ -107,9 +125,35 @@ namespace ImageCompress.Shared
         /// </summary>
         /// <param name="sourceDirectory">源文件夹</param>
         /// <param name="option"></param>
-        public static void CompressMultiple(string sourceDirectory, MassCompressOption option)
+        public static void CompressMultiple(string sourceDirectory, string outputPath, IMassCompressOption option)
         {
-            CompressMultiple(DirectoryAnalyst.GetImageFilesList(sourceDirectory, option.KeepDirectoryStruct), option);
+            var list = DirectoryAnalyst.GetImageFilesList(sourceDirectory, !option.NoRecurse);
+            if (option.NoKeepStruct)
+            {
+                CompressMultiple(list, outputPath, option);
+            }
+            //分组目录结构
+            var query = from file in list
+                            //分组的Key ::: -文件所在目录 与 源目录 的相对路径  相对于  输出目录  即 最终输出文件应在的目录
+                        group file by Path.GetFullPath(Path.GetRelativePath(sourceDirectory, Path.GetDirectoryName(file)), outputPath) into fileGroup
+                        //orderby fileGroup.Key
+                        select fileGroup;
+            var queue = new Queue<Exception>();
+            foreach (var i in query)
+            {
+                try
+                {
+                    CompressMultiple(i, i.Key, option);
+                }
+                catch (AggregateException e)
+                {
+                    foreach (var item in e.InnerExceptions)
+                    {
+                        queue.Enqueue(item);
+                    }
+                }
+            }
+            if (queue.Count > 0) throw new AggregateException(queue);
         }
     }
 }

@@ -13,5 +13,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)CompressOption.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DirectoryAnalyst.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Extensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ICompressOption.cs" />
   </ItemGroup>
 </Project>

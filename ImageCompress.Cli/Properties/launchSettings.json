@@ -1,0 +1,15 @@
+{
+  "profiles": {
+    "ImageCompress": {
+      "commandName": "Project"
+    },
+    "help": {
+      "commandName": "Project",
+      "commandLineArgs": "-h"
+    },
+    "testMassCompress": {
+      "commandName": "Project",
+      "commandLineArgs": "./test ./test_out"
+    }
+  }
+}

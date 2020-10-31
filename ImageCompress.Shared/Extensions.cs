@@ -3,7 +3,7 @@ using System.IO;
 
 namespace ImageCompress.Shared
 {
-    static class Extensions
+   public static class Extensions
     {
         /// <summary>
         /// 此方法判断字符串是否代表文件夹 而不是判断文件夹是否存在

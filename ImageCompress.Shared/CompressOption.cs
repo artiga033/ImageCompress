@@ -4,16 +4,14 @@ using System.Text;
 
 namespace ImageCompress.Shared
 {
-    public class CompressOption
+    public class CompressOption : ICompressOption
     {
-        /// <summary>
-        /// 输出目录
-        /// </summary>
-        public string OutputPath { get; set; }
-        public long Quality { get; set; }
+        public static CompressOption FromInterface(ICompressOption iOption) => (CompressOption)iOption;
+        public long Quality { get; set; } = 80;
     }
-    public class MassCompressOption : CompressOption
+    public class MassCompressOption : CompressOption, IMassCompressOption
     {
-        public bool KeepDirectoryStruct { get; set; }
+        public bool NoKeepStruct { get; set; }
+        public bool NoRecurse { get; set; }
     }
 }
